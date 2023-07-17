@@ -54,7 +54,7 @@ parser.add_argument("--lr", default=2e-5, type=float)
 parser.add_argument("--num_negs_per_system", default=5, type=int)
 parser.add_argument("--use_pre_trained_model", default=False, action="store_true")
 parser.add_argument("--use_all_queries", default=False, action="store_true")
-parser.add_argument("--use-lambdarank", default=False, action="store_true")
+parser.add_argument("--use-lambdarank", default=True, action="store_true")
 parser.add_argument("--ce_score_margin", default=3.0, type=float)
 args = parser.parse_args()
 
