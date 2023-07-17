@@ -56,7 +56,7 @@ class MultipleNegativesRankingLoss(nn.Module):
             if not self.use_lambdarank:
                 self.loss = nn.CrossEntropyLoss()
             else:
-                self.loss = LambdaRankLoss(num_items=scores.shape[1], batch_size=scores.shape[0])
+                self.loss = LambdaRankLoss(num_items=scores.shape[1], batch_size=scores.shape[0], device=scores.device)
         return self.loss
 
 

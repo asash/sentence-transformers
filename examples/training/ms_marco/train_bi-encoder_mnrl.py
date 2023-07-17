@@ -42,7 +42,7 @@ logging.basicConfig(format='%(asctime)s - %(message)s',
 
 
 parser = argparse.ArgumentParser()
-parser.add_argument("--train_batch_size", default=64, type=int)
+parser.add_argument("--train_batch_size", default=32, type=int)
 parser.add_argument("--max_seq_length", default=300, type=int)
 parser.add_argument("--model_name", default="distilroberta-base")
 parser.add_argument("--max_passages", default=0, type=int)
@@ -147,8 +147,13 @@ if not os.path.exists(hard_negatives_filepath):
 logging.info("Read hard negatives train file")
 train_queries = {}
 negs_to_use = None
+cnt = 0
+
 with gzip.open(hard_negatives_filepath, 'rt') as fIn:
     for line in tqdm.tqdm(fIn):
+        if cnt >= 1000:
+            break
+        cnt += 1
         data = json.loads(line)
 
         #Get the positive passage ids

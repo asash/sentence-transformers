@@ -45,6 +45,7 @@ class LambdaRankLoss(torch.autograd.Function):
                  lambda_normalization : bool = True,
                  pred_truncate_at : int = None, 
                  bce_grad_weight : float = 0.0, 
+                 device='cpu',
                  remove_batch_dim : bool = False):
         
         self.__name__ = 'lambdarank'
@@ -55,7 +56,7 @@ class LambdaRankLoss(torch.autograd.Function):
         self.bce_grad_weight = bce_grad_weight
         self.remove_batch_dim = remove_batch_dim
         self.params_truncate_at = pred_truncate_at
-
+        self.device = device
         self.params_ndcg_at = ndcg_at
         self.lambda_normalization = lambda_normalization
         self.less_is_better = False
@@ -81,11 +82,11 @@ class LambdaRankLoss(torch.autograd.Function):
             self.pred_truncate_at = self.params_truncate_at
 
         self.ndcg_at = min(self.params_ndcg_at, self.num_items)
-        self.dcg_position_discounts = 1. / torch.log2((torch.range(0,self.pred_truncate_at-1) + 2).type(self.dtype))
+        self.dcg_position_discounts = (1. / torch.log2((torch.range(0,self.pred_truncate_at-1) + 2).type(self.dtype))).to(self.device)
         self.top_position_discounts = self.dcg_position_discounts[:self.ndcg_at].view(self.ndcg_at, 1)
         self.swap_importance = torch.abs(self.get_pairwise_diffs_for_vector(self.dcg_position_discounts))
-        self.batch_indices = tile(unsqueeze(torch.range(0, self.batch_size-1), 1), [1, self.pred_truncate_at]).view(self.pred_truncate_at * self.batch_size, 1)
-        self.mask = (1 - F.pad(torch.ones(self.ndcg_at), (0, self.pred_truncate_at - self.ndcg_at)).view(1, self.pred_truncate_at)).type(self.dtype)
+        self.batch_indices = tile(unsqueeze(torch.range(0, self.batch_size-1), 1), [1, self.pred_truncate_at]).view(self.pred_truncate_at * self.batch_size, 1).to(self.device)
+        self.mask = (1 - F.pad(torch.ones(self.ndcg_at), (0, self.pred_truncate_at - self.ndcg_at)).view(1, self.pred_truncate_at)).type(self.dtype).to(self.device)
         
     
     #in pytorch y_pred is the first argument
