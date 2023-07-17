@@ -66,7 +66,8 @@ class MultipleNegativesRankingLoss(nn.Module):
         embeddings_b = torch.cat(reps[1:])
 
         scores = self.similarity_fct(embeddings_a, embeddings_b) * self.scale
-        labels = torch.tensor(range(len(scores)), dtype=torch.long, device=scores.device)  # Example a[i] should match with b[i]
+        labels_classes = torch.tensor(range(len(scores)), dtype=torch.long, device=scores.device)  # Example a[i] should match with b[i]
+        labels = torch.nn.functional.one_hot(labels_classes, num_classes = scores.shape[1]).type(torch.float32)
         loss = self.get_loss(scores)
         return loss(scores, labels)
 
