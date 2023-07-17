@@ -3,6 +3,7 @@ from torch import nn, Tensor
 from typing import Iterable, Dict
 from ..SentenceTransformer import SentenceTransformer
 from .. import util
+from .LambdaRankLoss import LambdaRankLoss
 
 class MultipleNegativesRankingLoss(nn.Module):
     """
@@ -36,7 +37,7 @@ class MultipleNegativesRankingLoss(nn.Module):
             train_dataloader = DataLoader(train_examples, shuffle=True, batch_size=32)
             train_loss = losses.MultipleNegativesRankingLoss(model=model)
     """
-    def __init__(self, model: SentenceTransformer, scale: float = 20.0, similarity_fct = util.cos_sim):
+    def __init__(self, model: SentenceTransformer, scale: float = 20.0, similarity_fct = util.cos_sim, use_lambdarank=False):
         """
         :param model: SentenceTransformer model
         :param scale: Output of similarity function is multiplied by scale value
@@ -46,7 +47,17 @@ class MultipleNegativesRankingLoss(nn.Module):
         self.model = model
         self.scale = scale
         self.similarity_fct = similarity_fct
-        self.cross_entropy_loss = nn.CrossEntropyLoss()
+        self.use_lambdarank = use_lambdarank
+        self.loss = None
+
+    #lazy init, as lambdarank needs batch sizes
+    def get_loss(self, scores):
+        if self.loss is None:
+            if not self.use_lambdarank:
+                self.loss = nn.CrossEntropyLoss()
+            else:
+                self.loss = LambdaRankLoss(num_items=scores.shape[1], batch_size=scores.shape[0])
+        return self.loss
 
 
     def forward(self, sentence_features: Iterable[Dict[str, Tensor]], labels: Tensor):
@@ -56,7 +67,8 @@ class MultipleNegativesRankingLoss(nn.Module):
 
         scores = self.similarity_fct(embeddings_a, embeddings_b) * self.scale
         labels = torch.tensor(range(len(scores)), dtype=torch.long, device=scores.device)  # Example a[i] should match with b[i]
-        return self.cross_entropy_loss(scores, labels)
+        loss = self.get_loss(scores)
+        return loss(scores, labels)
 
     def get_config_dict(self):
         return {'scale': self.scale, 'similarity_fct': self.similarity_fct.__name__}

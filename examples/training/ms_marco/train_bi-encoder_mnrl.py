@@ -44,7 +44,7 @@ logging.basicConfig(format='%(asctime)s - %(message)s',
 parser = argparse.ArgumentParser()
 parser.add_argument("--train_batch_size", default=64, type=int)
 parser.add_argument("--max_seq_length", default=300, type=int)
-parser.add_argument("--model_name", required=True)
+parser.add_argument("--model_name", default="distilroberta-base")
 parser.add_argument("--max_passages", default=0, type=int)
 parser.add_argument("--epochs", default=10, type=int)
 parser.add_argument("--pooling", default="mean")
@@ -54,6 +54,7 @@ parser.add_argument("--lr", default=2e-5, type=float)
 parser.add_argument("--num_negs_per_system", default=5, type=int)
 parser.add_argument("--use_pre_trained_model", default=False, action="store_true")
 parser.add_argument("--use_all_queries", default=False, action="store_true")
+parser.add_argument("--use-lambdarank", default=False, action="store_true")
 parser.add_argument("--ce_score_margin", default=3.0, type=float)
 args = parser.parse_args()
 
@@ -226,7 +227,7 @@ class MSMARCODataset(Dataset):
 # For training the SentenceTransformer model, we need a dataset, a dataloader, and a loss used for training.
 train_dataset = MSMARCODataset(train_queries, corpus=corpus)
 train_dataloader = DataLoader(train_dataset, shuffle=True, batch_size=train_batch_size)
-train_loss = losses.MultipleNegativesRankingLoss(model=model)
+train_loss = losses.MultipleNegativesRankingLoss(model=model, use_lambdarank=args.use_lambdarank)
 
 # Train the model
 model.fit(train_objectives=[(train_dataloader, train_loss)],
