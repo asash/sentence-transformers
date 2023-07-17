@@ -147,8 +147,6 @@ if not os.path.exists(hard_negatives_filepath):
 logging.info("Read hard negatives train file")
 train_queries = {}
 negs_to_use = None
-max_samples = 1000
-num_samples = 0
 with gzip.open(hard_negatives_filepath, 'rt') as fIn:
     for line in tqdm.tqdm(fIn):
         data = json.loads(line)
@@ -190,9 +188,6 @@ with gzip.open(hard_negatives_filepath, 'rt') as fIn:
 
         if args.use_all_queries or (len(pos_pids) > 0 and len(neg_pids) > 0):
             train_queries[data['qid']] = {'qid': data['qid'], 'query': queries[data['qid']], 'pos': pos_pids, 'neg': neg_pids}
-        num_samples += 1
-        if num_samples >= max_samples:
-            break
 del ce_scores
 
 logging.info("Train queries: {}".format(len(train_queries)))
